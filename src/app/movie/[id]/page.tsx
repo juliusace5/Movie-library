@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
+// Movie details type
 interface MovieDetails {
   title: string;
   poster_path: string;
@@ -20,22 +21,38 @@ interface CastMember {
 }
 
 interface MoviePageProps {
-  params: { id: string };
+  params: Promise<{
+    id: string; // dynamic parameter id wrapped in a Promise
+  }>;
 }
 
 const MovieDetailsPage = ({ params }: MoviePageProps) => {
-  const { id } = params;
   const [movieInfo, setMovieInfo] = useState<MovieDetails | null>(null);
   const [isPageLoading, setIsPageLoading] = useState<boolean>(true);
+  const [movieId, setMovieId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id) return;
+    const fetchParams = async () => {
+      try {
+        // Resolving params to get the id
+        const resolvedParams = await params;
+        setMovieId(resolvedParams.id);
+      } catch (error) {
+        console.error("Error resolving params:", error);
+      }
+    };
+
+    fetchParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (!movieId) return;
 
     const grabMovieDetails = async () => {
       setIsPageLoading(true);
       try {
         const res = await fetch(
-          `https://api.themoviedb.org/3/movie/${id}?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&append_to_response=credits`
+          `https://api.themoviedb.org/3/movie/${movieId}?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&append_to_response=credits`
         );
 
         if (!res.ok) throw new Error("Failed to fetch movie details");
@@ -58,7 +75,7 @@ const MovieDetailsPage = ({ params }: MoviePageProps) => {
     };
 
     grabMovieDetails();
-  }, [id]);
+  }, [movieId]);
 
   if (isPageLoading) {
     return <div>🎬 Hold tight, fetching movie magic…</div>;
