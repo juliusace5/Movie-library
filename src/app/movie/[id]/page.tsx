@@ -11,7 +11,7 @@ interface MovieDetails {
   genres: { name: string }[];
   release_date: string;
   vote_average: number;
-  cast?: { name: string; character: string; profile_path?: string }[];
+  cast?: { name: string; character: string; profile_path?: string }[]; // Cast can be undefined
 }
 
 interface CastMember {
@@ -22,7 +22,7 @@ interface CastMember {
 
 interface MoviePageProps {
   params: Promise<{
-    id: string; // dynamic parameter id wrapped in a Promise
+    id: string; 
   }>;
 }
 
@@ -58,13 +58,14 @@ const MovieDetailsPage = ({ params }: MoviePageProps) => {
         if (!res.ok) throw new Error("Failed to fetch movie details");
         const data = await res.json();
 
-        const castData: CastMember[] = data.credits.cast.map(
+        // Handle case where the cast is undefined or empty
+        const castData: CastMember[] = data.credits?.cast?.map(
           (member: CastMember) => ({
             name: member.name,
             character: member.character,
             profile_path: member.profile_path,
           })
-        );
+        ) || []; // Default to empty array if cast is not available
 
         setMovieInfo({ ...data, cast: castData });
       } catch (error) {
@@ -111,7 +112,7 @@ const MovieDetailsPage = ({ params }: MoviePageProps) => {
         </div>
       </div>
 
-      {movieInfo.cast && (
+      {movieInfo.cast && movieInfo.cast.length > 0 ? (
         <div className="mt-8">
           <h2 className="text-3xl font-semibold mb-4 text-center">Cast</h2>
           <ul className="flex flex-wrap justify-center gap-6">
@@ -141,6 +142,8 @@ const MovieDetailsPage = ({ params }: MoviePageProps) => {
             ))}
           </ul>
         </div>
+      ) : (
+        <div className="mt-8 text-center text-gray-400">No cast available</div>
       )}
     </div>
   );
